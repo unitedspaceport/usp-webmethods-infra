@@ -1,0 +1,149 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+
+        "KeyName": {
+            "Description": "Name of an existing ECZ KeyPair to enable SSH access to the instance",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription": " Must be the name of an existing EC2 KeyPair"
+        },
+        "SSHLocation": {
+              "Description": "Lockdown SSH access to the bastion host (default can be accessed from anywhere)",
+              "Type": "String",
+              "MinLength": "9",
+              "MaxLength": "18",
+              "Default": "0.0.0.0/0"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "a3db41b9-31cc-4620-97af-82f6dd7c730d": {
+                "size": {
+                    "width": 320,
+                    "height": 190
+                },
+                "position": {
+                    "x": 100,
+                    "y": 216
+                },
+                "z": 1,
+                "embeds": [
+                    "f73b2bf0-3450-4548-b2a3-f1e8c79b0f6a"
+                ],
+                "iscontainedinside": [
+                    "1b162cc9-713a-43d5-bb71-5948f1e66f96",
+                    "1b162cc9-713a-43d5-bb71-5948f1e66f96",
+                    "1b162cc9-713a-43d5-bb71-5948f1e66f96",
+                    "1b162cc9-713a-43d5-bb71-5948f1e66f96"
+                ]
+            },
+            "f73b2bf0-3450-4548-b2a3-f1e8c79b0f6a": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 170,
+                    "y": 280
+                },
+                "z": 2,
+                "parent": "a3db41b9-31cc-4620-97af-82f6dd7c730d",
+                "embeds": [],
+                "iscontainedinside": [
+                    "a3db41b9-31cc-4620-97af-82f6dd7c730d",
+                    "a3db41b9-31cc-4620-97af-82f6dd7c730d",
+                    "a3db41b9-31cc-4620-97af-82f6dd7c730d",
+                    "a3db41b9-31cc-4620-97af-82f6dd7c730d"
+                ]
+            },
+            "c0c516b3-c04e-4263-8a3f-6a1c93c79ca6": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 184.21996872793412,
+                    "y": 443.0646685384729
+                },
+                "z": 0
+            }
+        }
+    },
+    "Resources": {
+        "WmVPC" : {
+           "Type" : "AWS::EC2::VPC",
+           "Properties" : {
+              "CidrBlock" : "10.0.1.0/28",
+              "EnableDnsSupport" : true,
+              "EnableDnsHostnames" : true,
+              "InstanceTenancy" : "default"
+           }
+        },
+        "WmUspSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "WmVPC"
+                },
+                "MapPublicIpOnLaunch" : true,
+                "CidrBlock" : "10.0.1.0/28"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "a3db41b9-31cc-4620-97af-82f6dd7c730d"
+                }
+            }
+        },
+        "ManagementServer": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "ImageId": "ami-ea26ce85",
+                "NetworkInterfaces" : [
+                                            { "DeviceIndex" : "0",
+                                              "AssociatePublicIpAddress" : "true",
+                                              "DeleteOnTermination" : "true",
+                                              "SubnetId" : { "Ref" : "WmUspSubnet" },
+                                              "GroupSet" : [ { "Ref" : "MySecurityGroup" } ]
+                                            }
+                                          ],
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sdc",
+                        "VirtualName": "ephemeral0"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "f73b2bf0-3450-4548-b2a3-f1e8c79b0f6a"
+                }
+            }
+        },
+        "MySecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription" : "SSH access",
+                "VpcId" : { "Ref" : "WmVPC" },
+                "SecurityGroupIngress" : [{ "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : { "Ref" : "SSHLocation" }}]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "c0c516b3-c04e-4263-8a3f-6a1c93c79ca6"
+                }
+            }
+        }
+    },
+
+    "Outputs" : {
+        "Instance" : {
+            "Value" : {
+                "Fn::GetAtt" : [ "ManagementServer", "PublicDnsName"]
+            },
+            "Description" :  "DNS name of newly created EC2 instance"
+        }
+    }
+}
