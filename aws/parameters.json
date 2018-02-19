@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "key-pair-samuel"
+  },
+  {
+    "ParameterKey": "SSHLocation",
+    "ParameterValue": "0.0.0.0/0"
+  }
+]
